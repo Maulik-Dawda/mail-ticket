@@ -1,0 +1,19 @@
+{
+    "name": "maulik/mail-ticket",
+    "description": "PHP Email to Ticket System",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Maulik Dawda"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "MailTicket\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=8.0"
+    }
+}

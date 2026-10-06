@@ -1,0 +1,8 @@
+vendor/
+database/*.sqlite
+database/*.sqlite-journal
+public/uploads/attachments/*
+!public/uploads/attachments/.gitkeep
+.idea/
+.vscode/
+*.log
