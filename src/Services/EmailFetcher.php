@@ -2,18 +2,15 @@
 
 namespace MailTicket\Services;
 
+use MailTicket\Helpers\Config;
 use Exception;
 
 class EmailFetcher {
     private array $config;
 
     public function __construct() {
-        $configPath = __DIR__ . '/../../config/mail.php';
-        if (!file_exists($configPath)) {
-            $configPath = __DIR__ . '/../../config/mail.php.example';
-        }
-        $mailConfig = require $configPath;
-        $this->config = $mailConfig['incoming'];
+        $mailConfig = Config::getMailConfig();
+        $this->config = $mailConfig['incoming'] ?? [];
     }
 
     /**
@@ -21,8 +18,8 @@ class EmailFetcher {
      * @return array Array of created tickets or status message
      */
     public function fetchAndProcess(): array {
-        if (!$this->config['enabled']) {
-            return ['status' => 'disabled', 'message' => 'Email fetching is disabled in config/mail.php'];
+        if (empty($this->config['enabled'])) {
+            return ['status' => 'disabled', 'message' => 'Email fetching is disabled in configuration'];
         }
 
         if (function_exists('imap_open')) {
@@ -34,14 +31,14 @@ class EmailFetcher {
     }
 
     private function fetchViaPhpImap(): array {
-        $host = $this->config['host'];
-        $port = $this->config['port'];
-        $ssl = strtolower($this->config['encryption']) === 'ssl' ? '/ssl' : (strtolower($this->config['encryption']) === 'tls' ? '/tls' : '');
-        $validate = $this->config['validate_cert'] ? '' : '/novalidate-cert';
+        $host = $this->config['host'] ?? '';
+        $port = $this->config['port'] ?? 993;
+        $ssl = strtolower($this->config['encryption'] ?? 'ssl') === 'ssl' ? '/ssl' : (strtolower($this->config['encryption'] ?? '') === 'tls' ? '/tls' : '');
+        $validate = !empty($this->config['validate_cert']) ? '' : '/novalidate-cert';
         
         $mailbox = "{" . "{$host}:{$port}/imap{$ssl}{$validate}" . "}INBOX";
-        $username = $this->config['username'];
-        $password = $this->config['password'];
+        $username = $this->config['username'] ?? '';
+        $password = $this->config['password'] ?? '';
 
         $connection = @imap_open($mailbox, $username, $password);
         if (!$connection) {
@@ -71,7 +68,7 @@ class EmailFetcher {
 
                 $createdTickets[] = $ticket;
 
-                if ($this->config['delete_after_import']) {
+                if (!empty($this->config['delete_after_import'])) {
                     imap_delete($connection, $emailNumber);
                 } else {
                     imap_setflag_full($connection, (string)$emailNumber, "\\Seen");
@@ -89,9 +86,9 @@ class EmailFetcher {
 
     private function fetchViaSocketStream(): array {
         // Direct socket connection status test
-        $host = $this->config['host'];
-        $port = $this->config['port'];
-        $sslPrefix = strtolower($this->config['encryption']) === 'ssl' ? 'ssl://' : '';
+        $host = $this->config['host'] ?? '';
+        $port = $this->config['port'] ?? 993;
+        $sslPrefix = strtolower($this->config['encryption'] ?? 'ssl') === 'ssl' ? 'ssl://' : '';
 
         $timeout = 5;
         $fp = @fsockopen($sslPrefix . $host, $port, $errno, $errstr, $timeout);

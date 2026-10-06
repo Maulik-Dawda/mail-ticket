@@ -4,17 +4,14 @@ namespace MailTicket;
 
 use PDO;
 use PDOException;
+use MailTicket\Helpers\Config;
 
 class Database {
     private static ?PDO $instance = null;
 
     public static function getInstance(): PDO {
         if (self::$instance === null) {
-            $configPath = __DIR__ . '/../config/database.php';
-            if (!file_exists($configPath)) {
-                $configPath = __DIR__ . '/../config/database.php.example';
-            }
-            $config = require $configPath;
+            $config = Config::getDatabaseConfig();
             $driver = $config['driver'] ?? 'sqlite';
 
             try {
@@ -57,7 +54,7 @@ class Database {
                 <body>
                     <div class='card'>
                         <h2>⚠️ Database Connection Error</h2>
-                        <p>Unable to connect to the database. Please verify your settings in <code>config/database.php</code> on your server.</p>
+                        <p>Unable to connect to the database. Please verify your settings in <code>config/database.php</code> or the Settings page.</p>
                         <p><strong>Error Details:</strong> " . htmlspecialchars($e->getMessage()) . "</p>
                         <hr style='border-color: rgba(255,255,255,0.1); margin: 1.5rem 0;'>
                         <p style='font-size: 0.9rem; color: #9ca3af;'>Tip: If using MySQL on Hostinger / cPanel, check that your DB user, DB name, and password in <code>config/database.php</code> match your hosting panel.</p>

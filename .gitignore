@@ -4,7 +4,9 @@ database/*.sqlite-journal
 public/uploads/attachments/*
 !public/uploads/attachments/.gitkeep
 config/mail.php
+config/mail.json
 config/database.php
+config/database.json
 .idea/
 .vscode/
 *.log

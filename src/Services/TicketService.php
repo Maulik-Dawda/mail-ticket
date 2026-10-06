@@ -4,6 +4,7 @@ namespace MailTicket\Services;
 
 use MailTicket\Models\Ticket;
 use MailTicket\Models\Attachment;
+use MailTicket\Helpers\Config;
 use Exception;
 
 class TicketService {
@@ -34,13 +35,8 @@ class TicketService {
         );
 
         $savedAttachments = [];
-        
-        $configPath = __DIR__ . '/../../config/mail.php';
-        if (!file_exists($configPath)) {
-            $configPath = __DIR__ . '/../../config/mail.php.example';
-        }
-        $uploadConfig = require $configPath;
-        $attachmentDir = $uploadConfig['storage']['attachment_dir'];
+        $uploadConfig = Config::getMailConfig();
+        $attachmentDir = $uploadConfig['storage']['attachment_dir'] ?? (__DIR__ . '/../../public/uploads/attachments');
 
         if (!is_dir($attachmentDir)) {
             mkdir($attachmentDir, 0777, true);
