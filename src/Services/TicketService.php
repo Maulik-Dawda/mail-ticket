@@ -27,10 +27,10 @@ class TicketService {
 
         // Create Ticket in DB
         $ticket = Ticket::create(
-            subject: $subject,
-            description: $description,
-            senderEmail: $senderEmail,
-            priority: $priority
+            $subject,
+            $description,
+            $senderEmail,
+            $priority
         );
 
         $savedAttachments = [];
@@ -75,12 +75,12 @@ class TicketService {
 
             if ($saved) {
                 $savedAttachments[] = Attachment::create(
-                    ticketId: $ticket['id'],
-                    fileName: $storedFileName,
-                    originalName: $origName,
-                    filePath: 'uploads/attachments/' . $storedFileName,
-                    fileSize: $fileSize,
-                    mimeType: $mimeType
+                    $ticket['id'],
+                    $storedFileName,
+                    $origName,
+                    'uploads/attachments/' . $storedFileName,
+                    $fileSize,
+                    $mimeType
                 );
             }
         }

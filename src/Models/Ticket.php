@@ -135,7 +135,7 @@ class Ticket {
         $total = $db->query("SELECT COUNT(*) FROM tickets")->fetchColumn();
         $open = $db->query("SELECT COUNT(*) FROM tickets WHERE status = 'Open'")->fetchColumn();
         $inProgress = $db->query("SELECT COUNT(*) FROM tickets WHERE status = 'In Progress'")->fetchColumn();
-        $resolved = $db->query("SELECT SELECT COUNT(*) FROM tickets WHERE status = 'Resolved'" ?? "SELECT COUNT(*) FROM tickets WHERE status = 'Resolved'")->fetchColumn();
+        $resolved = $db->query("SELECT COUNT(*) FROM tickets WHERE status = 'Resolved'")->fetchColumn();
         $closed = $db->query("SELECT COUNT(*) FROM tickets WHERE status = 'Closed'")->fetchColumn();
 
         return [

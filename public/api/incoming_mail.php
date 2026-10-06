@@ -81,11 +81,11 @@ try {
     }
 
     $ticket = TicketService::createTicketFromEmail(
-        subject: $subject,
-        description: $description,
-        senderEmail: $senderEmail,
-        attachments: $attachments,
-        priority: $priority
+        $subject,
+        $description,
+        $senderEmail,
+        $attachments,
+        $priority
     );
 
     http_response_code(201);

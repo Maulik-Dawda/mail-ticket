@@ -63,10 +63,10 @@ class EmailFetcher {
                 $parsed = EmailParser::parseRawEmail($rawEmail);
 
                 $ticket = TicketService::createTicketFromEmail(
-                    subject: $parsed['subject'],
-                    description: $parsed['description'],
-                    senderEmail: $parsed['from_email'],
-                    attachments: $parsed['attachments']
+                    $parsed['subject'],
+                    $parsed['description'],
+                    $parsed['from_email'],
+                    $parsed['attachments']
                 );
 
                 $createdTickets[] = $ticket;

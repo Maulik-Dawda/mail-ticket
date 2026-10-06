@@ -31,11 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $ticket = TicketService::createTicketFromEmail(
-            subject: $subject,
-            description: $description,
-            senderEmail: $fromEmail,
-            attachments: $attachments,
-            priority: $priority
+            $subject,
+            $description,
+            $fromEmail,
+            $attachments,
+            $priority
         );
 
         header("Location: ticket_view.php?id=" . $ticket['id']);

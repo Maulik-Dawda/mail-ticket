@@ -9,9 +9,9 @@ $priorityFilter = $_GET['priority'] ?? 'All';
 $searchQuery = $_GET['search'] ?? null;
 
 $tickets = Ticket::getAll(
-    status: $statusFilter,
-    search: $searchQuery,
-    priority: $priorityFilter
+    $statusFilter,
+    $searchQuery,
+    $priorityFilter
 );
 
 $stats = Ticket::getStats();

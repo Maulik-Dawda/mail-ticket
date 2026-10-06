@@ -1,18 +1,30 @@
 <?php
 
 return [
-    'driver' => 'sqlite', // 'sqlite' or 'mysql'
+    /*
+    |--------------------------------------------------------------------------
+    | Database Driver Selection
+    |--------------------------------------------------------------------------
+    | Options: 'sqlite' (Zero-config out of the box) or 'mysql'
+    | Set to 'mysql' once your MySQL database user & password are created.
+    */
+    'driver' => 'sqlite',
     
     'sqlite' => [
         'database' => __DIR__ . '/../database/database.sqlite',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | MySQL Configuration Settings
+    |--------------------------------------------------------------------------
+    */
     'mysql' => [
-        'host' => '127.0.0.1',
-        'port' => 3306,
-        'database' => 'mail_ticket',
-        'username' => 'root',
-        'password' => '',
-        'charset' => 'utf8mb4',
+        'host'     => 'localhost',
+        'port'     => 3306,
+        'database' => 'u601208843_mail_ticket',
+        'username' => 'u601208843_mail',
+        'password' => 'YOUR_MYSQL_PASSWORD_HERE',
+        'charset'  => 'utf8mb4',
     ]
 ];
