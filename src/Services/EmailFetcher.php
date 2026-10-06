@@ -8,7 +8,11 @@ class EmailFetcher {
     private array $config;
 
     public function __construct() {
-        $mailConfig = require __DIR__ . '/../../config/mail.php';
+        $configPath = __DIR__ . '/../../config/mail.php';
+        if (!file_exists($configPath)) {
+            $configPath = __DIR__ . '/../../config/mail.php.example';
+        }
+        $mailConfig = require $configPath;
         $this->config = $mailConfig['incoming'];
     }
 

@@ -1,10 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../src/Autoloader.php';
 
 use MailTicket\Services\EmailFetcher;
 
-$mailConfig = require __DIR__ . '/../config/mail.php';
+$configPath = __DIR__ . '/../config/mail.php';
+if (!file_exists($configPath)) {
+    $configPath = __DIR__ . '/../config/mail.php.example';
+}
+$mailConfig = require $configPath;
 $cronOutput = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_fetch'])) {

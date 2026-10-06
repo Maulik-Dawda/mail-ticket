@@ -34,7 +34,12 @@ class TicketService {
         );
 
         $savedAttachments = [];
-        $uploadConfig = require __DIR__ . '/../../config/mail.php';
+        
+        $configPath = __DIR__ . '/../../config/mail.php';
+        if (!file_exists($configPath)) {
+            $configPath = __DIR__ . '/../../config/mail.php.example';
+        }
+        $uploadConfig = require $configPath;
         $attachmentDir = $uploadConfig['storage']['attachment_dir'];
 
         if (!is_dir($attachmentDir)) {
