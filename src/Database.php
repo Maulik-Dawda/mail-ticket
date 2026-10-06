@@ -32,7 +32,7 @@ class Database {
                     self::$instance->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
                 }
 
-                self::migrateSchema();
+                self::migrateSchema($driver);
 
             } catch (PDOException $e) {
                 die("Database Connection Error: " . $e->getMessage());
@@ -42,10 +42,14 @@ class Database {
         return self::$instance;
     }
 
-    private static function migrateSchema(): void {
+    private static function migrateSchema(string $driver): void {
         $schemaPath = __DIR__ . '/../database/schema.sql';
         if (file_exists($schemaPath)) {
             $sql = file_get_contents($schemaPath);
+            if ($driver === 'sqlite') {
+                $sql = str_replace('AUTO_INCREMENT', 'AUTOINCREMENT', $sql);
+                $sql = str_replace('INT AUTOINCREMENT PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT', $sql);
+            }
             self::$instance->exec($sql);
         }
     }
