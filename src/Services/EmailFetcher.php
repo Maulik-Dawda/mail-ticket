@@ -96,7 +96,7 @@ class EmailFetcher {
         $host = $this->config['host'] ?? '';
         $port = $this->config['port'] ?? 993;
         $sslPrefix = strtolower($this->config['encryption'] ?? 'ssl') === 'ssl' ? 'ssl://' : '';
-        $username = $this->config['username'] ?? '';
+        $username = trim($this->config['username'] ?? '');
         $password = $this->config['password'] ?? '';
 
         $timeout = 10;
@@ -110,10 +110,13 @@ class EmailFetcher {
         }
 
         // Read server greeting banner
-        fgets($fp, 1024);
+        $greeting = fgets($fp, 1024);
 
-        // Send IMAP Login Command
-        fputs($fp, "A1 LOGIN \"" . addslashes($username) . "\" \"" . addslashes($password) . "\"\r\n");
+        // Send IMAP Login Command with escaped double quotes
+        $cleanUser = str_replace(['\\', '"'], ['\\\\', '\"'], $username);
+        $cleanPass = str_replace(['\\', '"'], ['\\\\', '\"'], $password);
+        
+        fputs($fp, "A1 LOGIN \"{$cleanUser}\" \"{$cleanPass}\"\r\n");
         $loginResp = '';
         while ($line = fgets($fp, 1024)) {
             $loginResp .= $line;
@@ -124,7 +127,7 @@ class EmailFetcher {
             fclose($fp);
             return [
                 'status'  => 'login_failed',
-                'message' => 'IMAP Authentication Failed for ' . htmlspecialchars($username) . '. Please check password.'
+                'message' => 'IMAP Authentication Failed for ' . htmlspecialchars($username) . '. Server output: ' . htmlspecialchars(trim($loginResp))
             ];
         }
 
