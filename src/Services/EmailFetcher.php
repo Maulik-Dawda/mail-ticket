@@ -22,11 +22,20 @@ class EmailFetcher {
             return ['status' => 'disabled', 'message' => 'Email fetching is disabled in configuration'];
         }
 
-        if (function_exists('imap_open')) {
-            return $this->fetchViaPhpImap();
+        if (empty($this->config['host']) || empty($this->config['username']) || empty($this->config['password'])) {
+            return ['status' => 'config_incomplete', 'message' => 'IMAP Host, Username, or Password is missing. Please save settings on the Settings page.'];
         }
 
-        // Socket-based fallback / status check
+        if (function_exists('imap_open')) {
+            try {
+                return $this->fetchViaPhpImap();
+            } catch (Exception $e) {
+                // Fallback to raw socket connection if ext-imap fails
+                return $this->fetchViaSocketStream();
+            }
+        }
+
+        // Native Socket IMAP Client Fallback
         return $this->fetchViaSocketStream();
     }
 
@@ -45,14 +54,12 @@ class EmailFetcher {
             throw new Exception("IMAP Connection Failed: " . imap_last_error());
         }
 
+        // Search for UNSEEN (unread) emails
         $emails = imap_search($connection, 'UNSEEN');
         $createdTickets = [];
 
         if ($emails) {
             foreach ($emails as $emailNumber) {
-                $overview = imap_fetch_overview($connection, (string)$emailNumber, 0)[0] ?? null;
-                $structure = imap_fetchstructure($connection, $emailNumber);
-                
                 $header = imap_fetchheader($connection, $emailNumber);
                 $body = imap_body($connection, $emailNumber);
                 
@@ -80,31 +87,101 @@ class EmailFetcher {
         return [
             'status' => 'success',
             'count'  => count($createdTickets),
-            'tickets' => $createdTickets
+            'tickets' => $createdTickets,
+            'message' => count($createdTickets) > 0 ? "Successfully imported " . count($createdTickets) . " email ticket(s)." : "No unread emails found in inbox."
         ];
     }
 
     private function fetchViaSocketStream(): array {
-        // Direct socket connection status test
         $host = $this->config['host'] ?? '';
         $port = $this->config['port'] ?? 993;
         $sslPrefix = strtolower($this->config['encryption'] ?? 'ssl') === 'ssl' ? 'ssl://' : '';
+        $username = $this->config['username'] ?? '';
+        $password = $this->config['password'] ?? '';
 
-        $timeout = 5;
+        $timeout = 10;
         $fp = @fsockopen($sslPrefix . $host, $port, $errno, $errstr, $timeout);
 
         if (!$fp) {
             return [
                 'status'  => 'connection_failed',
-                'message' => "Could not connect to server {$host}:{$port} ({$errstr})"
+                'message' => "Could not connect to IMAP server {$host}:{$port} ({$errstr})"
             ];
         }
 
+        // Read server greeting banner
+        fgets($fp, 1024);
+
+        // Send IMAP Login Command
+        fputs($fp, "A1 LOGIN \"" . addslashes($username) . "\" \"" . addslashes($password) . "\"\r\n");
+        $loginResp = '';
+        while ($line = fgets($fp, 1024)) {
+            $loginResp .= $line;
+            if (strpos($line, 'A1 ') === 0) break;
+        }
+
+        if (strpos($loginResp, 'A1 OK') === false) {
+            fclose($fp);
+            return [
+                'status'  => 'login_failed',
+                'message' => 'IMAP Authentication Failed for ' . htmlspecialchars($username) . '. Please check password.'
+            ];
+        }
+
+        // Select INBOX
+        fputs($fp, "A2 SELECT INBOX\r\n");
+        while ($line = fgets($fp, 1024)) {
+            if (strpos($line, 'A2 ') === 0) break;
+        }
+
+        // Search UNSEEN messages
+        fputs($fp, "A3 SEARCH UNSEEN\r\n");
+        $searchResp = '';
+        while ($line = fgets($fp, 1024)) {
+            $searchResp .= $line;
+            if (strpos($line, 'A3 ') === 0) break;
+        }
+
+        preg_match('/\* SEARCH (.*)/i', $searchResp, $matches);
+        $msgNums = !empty($matches[1]) ? array_filter(explode(' ', trim($matches[1]))) : [];
+
+        $createdTickets = [];
+
+        foreach ($msgNums as $msgNum) {
+            $msgNum = trim($msgNum);
+            if (!is_numeric($msgNum)) continue;
+
+            fputs($fp, "A4 FETCH {$msgNum} (BODY[])\r\n");
+            $rawEmail = '';
+            while ($line = fgets($fp, 4096)) {
+                if (strpos($line, 'A4 OK') === 0) break;
+                $rawEmail .= $line;
+            }
+
+            if (!empty($rawEmail)) {
+                $parsed = EmailParser::parseRawEmail($rawEmail);
+                $ticket = TicketService::createTicketFromEmail(
+                    $parsed['subject'],
+                    $parsed['description'],
+                    $parsed['from_email'],
+                    $parsed['attachments']
+                );
+                $createdTickets[] = $ticket;
+
+                // Mark as seen
+                fputs($fp, "A5 STORE {$msgNum} +FLAGS (\\Seen)\r\n");
+                fgets($fp, 1024);
+            }
+        }
+
+        fputs($fp, "A6 LOGOUT\r\n");
         fclose($fp);
 
         return [
-            'status'  => 'notice',
-            'message' => 'IMAP socket reachable. PHP imap extension is not enabled, but Mail Simulator and Webhook API are available for instant ticket ingestion.'
+            'status' => 'success',
+            'count'  => count($createdTickets),
+            'tickets' => $createdTickets,
+            'message' => count($createdTickets) > 0 ? "Successfully imported " . count($createdTickets) . " email ticket(s)!" : "No unread emails found in inbox."
         ];
     }
 }
